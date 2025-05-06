@@ -12,12 +12,6 @@ import (
 	"github.com/google/uuid"
 )
 
-const (
-	TODO        todos.TaskStatus = "todo"
-	IN_PROGRESS todos.TaskStatus = "in-progress"
-	DONE        todos.TaskStatus = "done"
-)
-
 var todoList = make(map[string]todos.Task)
 
 func main() {
@@ -109,7 +103,7 @@ func add(arguments []string) (todos.Task, error) {
 	task := todos.Task{
 		Id:          uuid.NewString(),
 		Description: description,
-		Status:      TODO,
+		Status:      todos.TODO,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
@@ -222,6 +216,6 @@ func list(arguments []string) []todos.Task {
 }
 
 func existsStatus(status todos.TaskStatus) bool {
-	statuses := []todos.TaskStatus{TODO, IN_PROGRESS, DONE}
+	statuses := []todos.TaskStatus{todos.TODO, todos.IN_PROGRESS, todos.DONE}
 	return slices.Contains(statuses, status)
 }
