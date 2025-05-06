@@ -1,14 +1,14 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"slices"
 	"time"
 
+	"github.com/S3ergio31/task-cli/todos"
+	"github.com/S3ergio31/task-cli/todosRepository"
 	"github.com/google/uuid"
 )
 
@@ -19,28 +19,17 @@ const REMOVE = "remove"
 const MARK = "mark"
 const LIST = "list"
 
-// Task statuses
-type TaskStatus string
-
 const (
-	TODO        TaskStatus = "todo"
-	IN_PROGRESS TaskStatus = "in-progress"
-	DONE        TaskStatus = "done"
+	TODO        todos.TaskStatus = "todo"
+	IN_PROGRESS todos.TaskStatus = "in-progress"
+	DONE        todos.TaskStatus = "done"
 )
 
-type Task struct {
-	Id          string
-	Description string
-	Status      TaskStatus
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-}
-
 var commands = []string{ADD, UPDATE, REMOVE, MARK, LIST}
-var todos = make(map[string]Task)
+var todoList = make(map[string]todos.Task)
 
 func main() {
-	loadTodos()
+	todosRepository.LoadTodos(&todoList)
 	command := command()
 	err := validateCommand(command)
 
@@ -112,41 +101,7 @@ func main() {
 			fmt.Printf("- %s -> %s -> %s\n", task.Id, task.Description, task.Status)
 		}
 	}
-	saveTodos()
-}
-
-func loadTodos() {
-	jsonFile, err := os.Open("todos.json")
-
-	if err != nil {
-		fmt.Printf("loadTodos: %s\n", err)
-
-		return
-	}
-
-	defer jsonFile.Close()
-
-	byteValue, _ := io.ReadAll(jsonFile)
-
-	json.Unmarshal(byteValue, &todos)
-}
-
-func saveTodos() {
-	bytes, jsonErr := json.Marshal(todos)
-
-	if jsonErr != nil {
-		fmt.Printf("saveTodos: %s\n", jsonErr)
-
-		return
-	}
-
-	writeError := os.WriteFile("todos.json", bytes, 0644)
-
-	if writeError != nil {
-		fmt.Printf("saveTodos: %s\n", writeError)
-
-		return
-	}
+	todosRepository.SaveTodos(&todoList)
 }
 
 /*
@@ -173,14 +128,14 @@ func validateCommand(command string) error {
 /*
  * Domain
  */
-func add(arguments []string) (Task, error) {
+func add(arguments []string) (todos.Task, error) {
 	if len(arguments) == 0 {
-		return Task{}, errors.New("# Error: add -> invalid description")
+		return todos.Task{}, errors.New("# Error: add -> invalid description")
 	}
 
 	description := arguments[0]
 
-	task := Task{
+	task := todos.Task{
 		Id:          uuid.NewString(),
 		Description: description,
 		Status:      TODO,
@@ -188,14 +143,14 @@ func add(arguments []string) (Task, error) {
 		UpdatedAt:   time.Now(),
 	}
 
-	todos[task.Id] = task
+	todoList[task.Id] = task
 
 	return task, nil
 }
 
-func update(arguments []string) (Task, error) {
+func update(arguments []string) (todos.Task, error) {
 	if len(arguments) != 2 {
-		return Task{}, errors.New("# Error: update -> missing arguments")
+		return todos.Task{}, errors.New("# Error: update -> missing arguments")
 	}
 
 	taskId := arguments[0]
@@ -204,19 +159,19 @@ func update(arguments []string) (Task, error) {
 	task, err := find(taskId)
 
 	if err != nil {
-		return Task{}, err
+		return todos.Task{}, err
 	}
 
 	task.Description = newDescription
 
-	todos[taskId] = task
+	todoList[taskId] = task
 
 	return task, nil
 }
 
-func remove(arguments []string) (Task, error) {
+func remove(arguments []string) (todos.Task, error) {
 	if len(arguments) == 0 {
-		return Task{}, errors.New("# Error: remove -> Task id is not defined")
+		return todos.Task{}, errors.New("# Error: remove -> Task id is not defined")
 	}
 
 	taskId := arguments[0]
@@ -224,61 +179,61 @@ func remove(arguments []string) (Task, error) {
 	task, err := find(taskId)
 
 	if err != nil {
-		return Task{}, err
+		return todos.Task{}, err
 	}
 
-	delete(todos, task.Id)
+	delete(todoList, task.Id)
 
 	return task, nil
 }
 
-func find(taskId string) (Task, error) {
-	task, ok := todos[taskId]
+func find(taskId string) (todos.Task, error) {
+	task, ok := todoList[taskId]
 
 	if !ok {
 		message := fmt.Sprintf("# Error: remove -> task with (ID: %s) not found\n", taskId)
 
-		return Task{}, errors.New(message)
+		return todos.Task{}, errors.New(message)
 	}
 
 	return task, nil
 }
 
-func mark(arguments []string) (Task, error) {
-	var newStatus TaskStatus
+func mark(arguments []string) (todos.Task, error) {
+	var newStatus todos.TaskStatus
 
 	if len(arguments) != 2 {
-		return Task{}, errors.New("# Error: mark -> missing arguments")
+		return todos.Task{}, errors.New("# Error: mark -> missing arguments")
 	}
 
 	taskId := arguments[0]
-	newStatus = TaskStatus(arguments[1])
+	newStatus = todos.TaskStatus(arguments[1])
 
 	if !existsStatus(newStatus) {
 		message := fmt.Sprintf("# Error: mark -> Invalid status '%s'\n", newStatus)
 
-		return Task{}, errors.New(message)
+		return todos.Task{}, errors.New(message)
 	}
 
 	task, err := find(taskId)
 
 	if err != nil {
-		return Task{}, err
+		return todos.Task{}, err
 	}
 
-	task.Status = TaskStatus(newStatus)
+	task.Status = todos.TaskStatus(newStatus)
 
-	todos[taskId] = task
+	todoList[taskId] = task
 
 	return task, nil
 }
 
-func list(arguments []string) []Task {
-	var status TaskStatus
-	var filtered []Task
+func list(arguments []string) []todos.Task {
+	var status todos.TaskStatus
+	var filtered []todos.Task
 
 	if len(arguments) != 0 {
-		status = TaskStatus(arguments[0])
+		status = todos.TaskStatus(arguments[0])
 	}
 
 	if status != "" && !existsStatus(status) {
@@ -286,7 +241,7 @@ func list(arguments []string) []Task {
 		return filtered
 	}
 
-	for _, task := range todos {
+	for _, task := range todoList {
 		if status == "" || status == task.Status {
 			filtered = append(filtered, task)
 		}
@@ -295,7 +250,7 @@ func list(arguments []string) []Task {
 	return filtered
 }
 
-func existsStatus(status TaskStatus) bool {
-	statuses := []TaskStatus{TODO, IN_PROGRESS, DONE}
+func existsStatus(status todos.TaskStatus) bool {
+	statuses := []todos.TaskStatus{TODO, IN_PROGRESS, DONE}
 	return slices.Contains(statuses, status)
 }
