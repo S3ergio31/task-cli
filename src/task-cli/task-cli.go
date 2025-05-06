@@ -88,13 +88,31 @@ func main() {
 
 		fmt.Printf("# Output: Task deleted successfully (ID: %s)\n", task.Id)
 	case MARK:
+		fmt.Printf("# Marking a task as in progress, todo or done\n")
+
+		task, err := mark(arguments())
+
+		if err != nil {
+			fmt.Printf("%s", err.Error())
+
+			return
+		}
+
+		fmt.Printf("# Output: Task (ID: %s) was marked as '%s'\n", task.Id, task.Status)
 	case LIST:
+		fmt.Printf("# Action: # Listing task\n")
+
+		filteredTodos := list(arguments())
+
+		if len(filteredTodos) == 0 {
+			fmt.Printf("# Output: # There are not tasks to list\n")
+		}
+
+		for _, task := range filteredTodos {
+			fmt.Printf("- %s -> %s -> %s\n", task.Id, task.Description, task.Status)
+		}
 	}
 	saveTodos()
-}
-
-func handleError(err *error) {
-
 }
 
 func loadTodos() {
@@ -226,10 +244,58 @@ func find(taskId string) (Task, error) {
 	return task, nil
 }
 
-func mark() {
+func mark(arguments []string) (Task, error) {
+	var newStatus TaskStatus
 
+	if len(arguments) != 2 {
+		return Task{}, errors.New("# Error: mark -> missing arguments")
+	}
+
+	taskId := arguments[0]
+	newStatus = TaskStatus(arguments[1])
+
+	if !existsStatus(newStatus) {
+		message := fmt.Sprintf("# Error: mark -> Invalid status '%s'\n", newStatus)
+
+		return Task{}, errors.New(message)
+	}
+
+	task, err := find(taskId)
+
+	if err != nil {
+		return Task{}, err
+	}
+
+	task.Status = TaskStatus(newStatus)
+
+	todos[taskId] = task
+
+	return task, nil
 }
 
-func list() {
+func list(arguments []string) []Task {
+	var status TaskStatus
+	var filtered []Task
 
+	if len(arguments) != 0 {
+		status = TaskStatus(arguments[0])
+	}
+
+	if status != "" && !existsStatus(status) {
+		fmt.Printf("# Error: list -> Invalid status '%s'\n", status)
+		return filtered
+	}
+
+	for _, task := range todos {
+		if status == "" || status == task.Status {
+			filtered = append(filtered, task)
+		}
+	}
+
+	return filtered
+}
+
+func existsStatus(status TaskStatus) bool {
+	statuses := []TaskStatus{TODO, IN_PROGRESS, DONE}
+	return slices.Contains(statuses, status)
 }
