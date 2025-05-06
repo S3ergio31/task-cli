@@ -3,21 +3,14 @@ package main
 import (
 	"errors"
 	"fmt"
-	"os"
 	"slices"
 	"time"
 
+	"github.com/S3ergio31/task-cli/commands"
 	"github.com/S3ergio31/task-cli/todos"
 	"github.com/S3ergio31/task-cli/todosRepository"
 	"github.com/google/uuid"
 )
-
-// Actions
-const ADD = "add"
-const UPDATE = "update"
-const REMOVE = "remove"
-const MARK = "mark"
-const LIST = "list"
 
 const (
 	TODO        todos.TaskStatus = "todo"
@@ -25,13 +18,12 @@ const (
 	DONE        todos.TaskStatus = "done"
 )
 
-var commands = []string{ADD, UPDATE, REMOVE, MARK, LIST}
 var todoList = make(map[string]todos.Task)
 
 func main() {
 	todosRepository.LoadTodos(&todoList)
-	command := command()
-	err := validateCommand(command)
+	command := commands.Command()
+	err := commands.ValidateCommand(command)
 
 	if err != nil {
 		fmt.Printf("%s", err.Error())
@@ -40,10 +32,10 @@ func main() {
 	}
 
 	switch command {
-	case ADD:
+	case commands.ADD:
 		fmt.Printf("%s\n", "# Action: Adding a new task")
 
-		task, err := add(arguments())
+		task, err := add(commands.Arguments())
 
 		if err != nil {
 			fmt.Printf("%s", err.Error())
@@ -52,10 +44,10 @@ func main() {
 		}
 
 		fmt.Printf("# Output: Task added successfully (ID: %s)", task.Id)
-	case UPDATE:
+	case commands.UPDATE:
 		fmt.Printf("# Action: # Updating task\n")
 
-		task, err := update(arguments())
+		task, err := update(commands.Arguments())
 
 		if err != nil {
 			fmt.Printf("%s", err.Error())
@@ -64,10 +56,10 @@ func main() {
 		}
 
 		fmt.Printf("# Output: Task updated successfully (ID: %s)\n", task.Id)
-	case REMOVE:
+	case commands.REMOVE:
 		fmt.Printf("# Action: # Deleting task\n")
 
-		task, err := remove(arguments())
+		task, err := remove(commands.Arguments())
 
 		if err != nil {
 			fmt.Printf("%s", err.Error())
@@ -76,10 +68,10 @@ func main() {
 		}
 
 		fmt.Printf("# Output: Task deleted successfully (ID: %s)\n", task.Id)
-	case MARK:
+	case commands.MARK:
 		fmt.Printf("# Marking a task as in progress, todo or done\n")
 
-		task, err := mark(arguments())
+		task, err := mark(commands.Arguments())
 
 		if err != nil {
 			fmt.Printf("%s", err.Error())
@@ -88,10 +80,10 @@ func main() {
 		}
 
 		fmt.Printf("# Output: Task (ID: %s) was marked as '%s'\n", task.Id, task.Status)
-	case LIST:
+	case commands.LIST:
 		fmt.Printf("# Action: # Listing task\n")
 
-		filteredTodos := list(arguments())
+		filteredTodos := list(commands.Arguments())
 
 		if len(filteredTodos) == 0 {
 			fmt.Printf("# Output: # There are not tasks to list\n")
@@ -102,27 +94,6 @@ func main() {
 		}
 	}
 	todosRepository.SaveTodos(&todoList)
-}
-
-/*
- * Commands
- */
-func command() string {
-	return os.Args[1]
-}
-
-func arguments() []string {
-	return os.Args[2:]
-}
-
-func validateCommand(command string) error {
-	if !slices.Contains(commands, command) {
-		message := fmt.Sprintf("validateCommand: Invalid command -> %s", command)
-
-		return errors.New(message)
-	}
-
-	return nil
 }
 
 /*
