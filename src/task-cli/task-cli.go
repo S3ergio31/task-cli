@@ -61,7 +61,7 @@ func add() {
 }
 
 func update() {
-	fmt.Printf("# Action: # Updating task\n")
+	fmt.Printf("# Action: Updating task\n")
 
 	task, err := todos.Update(commands.Arguments())
 
@@ -75,7 +75,7 @@ func update() {
 }
 
 func remove() {
-	fmt.Printf("# Action: # Deleting task\n")
+	fmt.Printf("# Action: Deleting task\n")
 
 	task, err := todos.Remove(commands.Arguments())
 
@@ -103,12 +103,12 @@ func mark() {
 }
 
 func list() {
-	fmt.Printf("# Action: # Listing task\n")
+	fmt.Printf("# Action: Listing task\n")
 
 	filteredTodos := todos.List(commands.Arguments())
 
 	if len(filteredTodos) == 0 {
-		fmt.Printf("# Output: # There are not tasks to list\n")
+		fmt.Printf("# Output: There are not tasks to list\n")
 	}
 
 	for _, task := range filteredTodos {

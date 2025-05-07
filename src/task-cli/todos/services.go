@@ -39,7 +39,7 @@ func Update(arguments []string) (Task, error) {
 	taskId := arguments[0]
 	newDescription := arguments[1]
 
-	task, err := find(taskId)
+	task, err := Find(taskId)
 
 	if err != nil {
 		return Task{}, err
@@ -59,7 +59,7 @@ func Remove(arguments []string) (Task, error) {
 
 	taskId := arguments[0]
 
-	task, err := find(taskId)
+	task, err := Find(taskId)
 
 	if err != nil {
 		return Task{}, err
@@ -70,7 +70,7 @@ func Remove(arguments []string) (Task, error) {
 	return task, nil
 }
 
-func find(taskId string) (Task, error) {
+func Find(taskId string) (Task, error) {
 	task, ok := TodoList[taskId]
 
 	if !ok {
@@ -98,7 +98,7 @@ func Mark(arguments []string) (Task, error) {
 		return Task{}, errors.New(message)
 	}
 
-	task, err := find(taskId)
+	task, err := Find(taskId)
 
 	if err != nil {
 		return Task{}, err
