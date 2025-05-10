@@ -17,15 +17,18 @@ const (
 
 var commands = []string{ADD, UPDATE, REMOVE, MARK, LIST}
 
-func Command() string {
-	return os.Args[1]
+type Command interface {
+	Handle()
+	arguments() []string
 }
 
-func Arguments() []string {
+type baseCommand struct{}
+
+func (bc baseCommand) arguments() []string {
 	return os.Args[2:]
 }
 
-func ValidateCommand(command string) error {
+func validateCommand(command string) error {
 	if !slices.Contains(commands, command) {
 		message := fmt.Sprintf("validateCommand: Invalid command -> %s", command)
 
@@ -33,4 +36,28 @@ func ValidateCommand(command string) error {
 	}
 
 	return nil
+}
+
+func Build() (Command, error) {
+	command := os.Args[1]
+	err := validateCommand(command)
+
+	if err != nil {
+		return nil, err
+	}
+
+	switch command {
+	case ADD:
+		return addCommand{}, nil
+	case UPDATE:
+		return updateCommand{}, nil
+	case REMOVE:
+		return removeCommand{}, nil
+	case MARK:
+		return markCommand{}, nil
+	case LIST:
+		return listCommand{}, nil
+	}
+
+	return nil, nil
 }
